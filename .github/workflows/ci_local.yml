@@ -21,6 +21,9 @@ jobs:
         dune_version:
           - "3.17.2"
           - "3.23.1"
+        exclude:
+          - os: windows-latest
+            coq_version: "rocq-core.9.0.0"
     runs-on: ${{ matrix.os }}
 
     steps:
