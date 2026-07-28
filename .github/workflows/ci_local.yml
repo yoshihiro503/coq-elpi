@@ -1,0 +1,52 @@
+name: Build local
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        coq_version:
+          - "coq.8.20.1"
+          - "rocq-core.9.0.0"
+        dune_version:
+          - "3.17.2"
+          - "3.23.1"
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set-up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.2"
+          opam-repositories: |
+            default: https://opam.ocaml.org
+            rocq-released: https://rocq-prover.org/opam/released
+
+      - name: Install Coq/Rocq
+        run: opam install -y ${{ matrix.coq_version }}
+
+      - name: Pin dune to the matrix version
+        run: |
+          opam pin add -n -y dune ${{ matrix.dune_version }}
+          opam install -y dune
+
+      - name: Pin and build (follows rocq-elpi.opam's own build recipe)
+        run: |
+          opam pin add -n -y -k path rocq-elpi .
+          opam pin add -n -y -k path coq-elpi .
+          opam install -y -v rocq-elpi
+
+      - name: Show dune version actually used
+        run: opam exec -- dune --version
